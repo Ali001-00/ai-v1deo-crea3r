@@ -1,0 +1,35 @@
+
+> ai-video-editor@1.0.0 dev
+> electron-vite dev
+
+vite v5.4.21 building SSR bundle for development...
+transforming...
+✓ 1 modules transformed.
+rendering chunks...
+out/main/index.js  11.31 kB
+✓ built in 501ms
+
+build the electron main process successfully
+
+-----
+
+vite v5.4.21 building SSR bundle for development...
+transforming...
+✓ 1 modules transformed.
+rendering chunks...
+out/preload/index.js  1.42 kB
+✓ built in 17ms
+
+build the electron preload files successfully
+
+-----
+
+dev server running for the electron renderer process at:
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+
+start electron app...
+
+[26699:1212/130718.177421:ERROR:ozone_platform_x11.cc(240)] Missing X server or $DISPLAY
+[26699:1212/130718.177510:ERROR:env.cc(257)] The platform failed to initialize.  Exiting.
