@@ -7,7 +7,6 @@ import path from 'path'
 import { GoogleGenAI } from '@google/genai'
 import Store from 'electron-store'
 import axios from 'axios'
-import mime from 'mime'
 import ffmpeg from 'fluent-ffmpeg'
 
 const store = new Store()
@@ -139,7 +138,7 @@ ipcMain.handle('generate-image', async (_event, { prompt, apiKey, workerUrl }) =
 });
 
 // 4. Sequential Images (Mode 3)
-ipcMain.handle('generate-image-sequence', async (_event, { script, duration, apiKey, workerUrl }) => {
+ipcMain.handle('generate-image-sequence', async (_event, { script, duration, apiKey, geminiApiKey, workerUrl }) => {
     try {
         const numImages = Math.ceil(parseInt(duration) / 3);
         const folderName = `sequence-${Date.now()}`;
@@ -148,7 +147,11 @@ ipcMain.handle('generate-image-sequence', async (_event, { script, duration, api
 
         // 1. Generate Prompts using Gemini (free & fast) or Cloudflare
         // Using Gemini for prompt logic as it's better at instruction following
-        const ai = new GoogleGenAI({ apiKey: store.get('gemini1') as string || apiKey }); // Fallback or use specific key
+        // Use provided geminiApiKey or fallback to store, but definitely do NOT use 'apiKey' which is Cloudflare's
+        const gKey = geminiApiKey || store.get('gemini1');
+        if (!gKey) throw new Error("Gemini API Key is required for prompt generation in sequence mode.");
+
+        const ai = new GoogleGenAI({ apiKey: gKey as string });
         const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         const promptPrompt = `Script: "${script}"

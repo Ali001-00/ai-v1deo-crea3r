@@ -16,20 +16,36 @@ interface AppState {
         workerAuth: string;
     };
     setApiKey: (key: string, value: string) => void;
+    loadApiKeys: () => Promise<void>;
 }
+
+const defaultKeys = {
+    gemini1: 'AIzaSyDXFJsp90E3WkUE61tJb_pjGhRXT4HUHkI',
+    gemini2: 'AIzaSyC0r2Avr7FE8A-iUTReLytepeMCC2Bjn1I',
+    gemini3: 'AIzaSyCHbsTLj89Mi7H7HBbvpQwGnMpcTDSmg-I',
+    pexels: 'QO8xtBw362DEvUbg4Q9mqL2BMWiu3d0QZIqaimzIjXcrJkehrt3WnHFS',
+    pixabay: '53609210-93aa64f94fa4a665c73277ee0',
+    workerAuth: '12345678',
+};
 
 const useStore = create<AppState>((set) => ({
     currentMode: 'voice',
     setMode: (mode) => set({ currentMode: mode }),
-    apiKeys: {
-        gemini1: 'AIzaSyDXFJsp90E3WkUE61tJb_pjGhRXT4HUHkI',
-        gemini2: 'AIzaSyC0r2Avr7FE8A-iUTReLytepeMCC2Bjn1I',
-        gemini3: 'AIzaSyCHbsTLj89Mi7H7HBbvpQwGnMpcTDSmg-I',
-        pexels: 'QO8xtBw362DEvUbg4Q9mqL2BMWiu3d0QZIqaimzIjXcrJkehrt3WnHFS',
-        pixabay: '53609210-93aa64f94fa4a665c73277ee0',
-        workerAuth: '12345678',
+    apiKeys: defaultKeys,
+    setApiKey: (key, value) => {
+        set((state) => {
+            const newKeys = { ...state.apiKeys, [key]: value };
+            // Persist to electron-store
+            (window as any).api.setSettings('apiKeys', newKeys);
+            return { apiKeys: newKeys };
+        });
     },
-    setApiKey: (key, value) => set((state) => ({ apiKeys: { ...state.apiKeys, [key]: value } })),
+    loadApiKeys: async () => {
+        const storedKeys = await (window as any).api.getSettings('apiKeys');
+        if (storedKeys) {
+            set((state) => ({ apiKeys: { ...state.apiKeys, ...storedKeys } }));
+        }
+    }
 }));
 
 // --- Components ---
@@ -228,7 +244,8 @@ function ImageMode() {
                 const res = await (window as any).api.generateImageSequence({
                     script: script,
                     duration: duration,
-                    apiKey: apiKeys.workerAuth,
+                    apiKey: apiKeys.workerAuth, // Cloudflare
+                    geminiApiKey: apiKeys.gemini1, // Gemini for prompts
                     workerUrl: 'https://imgegen.dreamtravelbusiness863.workers.dev/'
                 });
                 if (res.success) setStatus(`Sequence saved to: ${res.folderPath}\nGenerated ${res.files.length} images.`);
@@ -399,7 +416,12 @@ function SettingsMode() {
 }
 
 function App() {
-    const { currentMode } = useStore();
+    const { currentMode, loadApiKeys } = useStore();
+
+    React.useEffect(() => {
+        loadApiKeys();
+    }, []);
+
     return (
         <div className="flex h-screen bg-gray-900 text-white font-sans">
             <Sidebar />
